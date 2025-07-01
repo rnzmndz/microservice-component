@@ -1,0 +1,35 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: employee-service
+              uri: lb://employee-service
+              predicates:
+                - Path=/employee-service/**  # Match all paths under /employee-service
+              filters:
+                - name: RewritePath
+                  args:
+                    regexp: '/employee-service(?<remaining>/.*)'
+                    replacement: '${remaining}'  # Remove /employee-service prefix
+                - name: CircuitBreaker
+                  args:
+                    name: employeeCircuitBreaker
+                    fallbackUri: forward:/fallback
+
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      employeeCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5s
