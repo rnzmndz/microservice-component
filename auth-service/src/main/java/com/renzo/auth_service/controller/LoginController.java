@@ -14,22 +14,22 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Date;
 
 @RestController
-@RequestMapping("/auth")
+//@RequestMapping("/auth")
 public class LoginController {
 
     private static final String SECRET = "myjwtsecret";
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest authRequest) {
-        if ("user".equals(authRequest.getUsername()) && "password".equals(authRequest.getPassword())) {
-            String token = Jwts.builder()
-                    .setSubject(authRequest.getUsername())
-                    .setIssuedAt(new Date())
-                    .setExpiration(new Date(System.currentTimeMillis() + 3600_000)) // 1 hour
-                    .signWith(SignatureAlgorithm.HS256, SECRET)
-                    .compact();
-            return ResponseEntity.ok(new AuthResponse(token));
-        }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-    }
+//    @PostMapping("/login")
+//    public ResponseEntity<?> login(@RequestBody AuthRequest authRequest) {
+//        if ("user".equals(authRequest.getUsername()) && "password".equals(authRequest.getPassword())) {
+//            String token = Jwts.builder()
+//                    .setSubject(authRequest.getUsername())
+//                    .setIssuedAt(new Date())
+//                    .setExpiration(new Date(System.currentTimeMillis() + 3600_000)) // 1 hour
+//                    .signWith(SignatureAlgorithm.HS256, SECRET)
+//                    .compact();
+//            return ResponseEntity.ok(new AuthResponse(token));
+//        }
+//        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+//    }
 }
