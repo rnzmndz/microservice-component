@@ -1,5 +1,6 @@
 package com.renzo.auth_service.dto;
 
+import com.renzo.auth_service.dto.employee.employee.EmployeeCreateDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,4 +14,5 @@ public class RegisterRequest {
     private String password;
     private String fullName;
     private String role;
+    private EmployeeCreateDto employeeCreateDto;
 }
