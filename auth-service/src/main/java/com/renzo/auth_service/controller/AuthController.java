@@ -7,14 +7,14 @@ import com.renzo.auth_service.dto.TokenResponse;
 import com.renzo.auth_service.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 @RestController
 @RequestMapping("/auth")
@@ -32,19 +32,31 @@ public class AuthController {
     @Value("${keycloak.client-secret}")
     private String clientSecret;
 
-    private final WebClient webClient = WebClient.create();
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @PostMapping("/login")
-    public Mono<TokenResponse> login(@RequestBody AuthRequest request) {
-        return webClient.post()
-                .uri(tokenUri)
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .bodyValue("grant_type=password&client_id=" + clientId +
-                        "&client_secret=" + clientSecret +
-                        "&username=" + request.getUsername() +
-                        "&password=" + request.getPassword())
-                .retrieve()
-                .bodyToMono(TokenResponse.class);
+    public ResponseEntity<TokenResponse> login(@RequestBody AuthRequest request) {
+        // Build form data
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("grant_type", "password");
+        formData.add("client_id", clientId);
+        formData.add("client_secret", clientSecret);
+        formData.add("username", request.getUsername());
+        formData.add("password", request.getPassword());
+
+        // Build request entity
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        HttpEntity<MultiValueMap<String, String>> httpEntity = new HttpEntity<>(formData, headers);
+
+        // Send the request
+        ResponseEntity<TokenResponse> response = restTemplate.postForEntity(
+                tokenUri,
+                httpEntity,
+                TokenResponse.class
+        );
+
+        return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
     }
 
     @PostMapping("/register")
