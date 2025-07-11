@@ -6,6 +6,7 @@ import com.renzo.auth_service.dto.RegisterResponse;
 import com.renzo.auth_service.model.AuthUser;
 import com.renzo.auth_service.repository.AuthUserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,8 @@ public class AuthService {
     private final KeycloakService keycloakService;
     private final EmployeeClient employeeClient;
 
+    @Value("${keycloak.realm}")
+    private String realm;
 
     public RegisterResponse register(RegisterRequest request) {
         if (authUserRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -31,6 +34,7 @@ public class AuthService {
 
         AuthUser authUser = AuthUser.builder()
                 .id(UUID.fromString(keycloakId))
+                .realmId(realm)
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .build();

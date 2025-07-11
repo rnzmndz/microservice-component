@@ -46,6 +46,7 @@ public class AuthController {
         formData.add("client_secret", clientSecret);
         formData.add("username", request.getUsername());
         formData.add("password", request.getPassword());
+        formData.add("scope", "openid email profile");
 
         // Build request entity
         HttpHeaders headers = new HttpHeaders();

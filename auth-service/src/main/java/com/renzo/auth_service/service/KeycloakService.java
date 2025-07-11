@@ -20,9 +20,6 @@ public class KeycloakService {
     @Value("${keycloak.realm}")
     private String realm;
 
-    @Value("${keycloak.client-id}")
-    private String clientId;
-
     @Value("${keycloak.username}")
     private String username;
 
@@ -35,8 +32,8 @@ public class KeycloakService {
     public void init() {
         this.keycloak = KeycloakBuilder.builder()
                 .serverUrl(serverUrl)
-                .realm(realm) // admin realm
-                .clientId(clientId)
+                .realm("master") // admin realm
+                .clientId("admin-cli")
                 .username(username)  // Keycloak admin username
                 .password(password)  // Keycloak admin password
                 .build();
@@ -47,11 +44,16 @@ public class KeycloakService {
         userRep.setUsername(request.getUsername());
         userRep.setEmail(request.getEmail());
         userRep.setEnabled(true);
+        userRep.setEmailVerified(false);
+
+        // Add required attributes
+        userRep.singleAttribute("origin", "spring-gateway");
 
         Response response = keycloak.realm(realm).users().create(userRep);
 
         if (response.getStatus() != 201) {
-            throw new RuntimeException("Failed to create user: " + response.getStatus());
+            String errorMsg = response.readEntity(String.class);
+            throw new RuntimeException("Failed to create user: " + response.getStatus() + " - " + errorMsg);
         }
 
         String userId = CreatedResponseUtil.getCreatedId(response);
