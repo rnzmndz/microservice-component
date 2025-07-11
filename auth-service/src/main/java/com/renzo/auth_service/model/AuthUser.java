@@ -17,21 +17,37 @@ import java.util.UUID;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "auth_users")
+@Table(name = "user_entity")
 @EntityListeners(AuditingEntityListener.class)
 public class AuthUser {
 
     @Id
+    @Column(name = "id", nullable = false)
     private UUID id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "realm_id", nullable = false)
+    private String realmId;
+
+    @Column(name = "username", nullable = false)
+    private String username;
+
+    @Column(name = "enabled", nullable = false)
+    private boolean enabled;
+
+    @Column(name = "email")
     private String email;
 
-    @Column(nullable = false)
-    private String passwordHash;
+    @Column(name = "first_name")
+    private String firstName;
 
+    @Column(name = "last_name")
+    private String lastName;
 
-    private String role;
+    @Column(name = "created_timestamp")
+    private Long createdTimestamp;
+
+    @Column(name = "email_verified")
+    private Boolean emailVerified;
 
     //Auditing fields
     @CreatedDate
@@ -46,10 +62,4 @@ public class AuthUser {
     @LastModifiedBy
     private String modifiedBy;
 
-    public AuthUser(UUID userId, String email, String hashedPassword, String role) {
-        this.id = userId;
-        this.email = email;
-        this.passwordHash = hashedPassword;
-        this.role = role;
-    }
 }

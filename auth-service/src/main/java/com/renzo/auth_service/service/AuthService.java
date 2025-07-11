@@ -6,7 +6,6 @@ import com.renzo.auth_service.dto.RegisterResponse;
 import com.renzo.auth_service.model.AuthUser;
 import com.renzo.auth_service.repository.AuthUserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -17,11 +16,9 @@ import java.util.UUID;
 public class AuthService {
 
     private final AuthUserRepository authUserRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final KeycloakService keycloakService;
     private final EmployeeClient employeeClient;
 
-    @Value("${employee-service.token}")
-    private String serviceToken;
 
     public RegisterResponse register(RegisterRequest request) {
         if (authUserRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -29,22 +26,22 @@ public class AuthService {
         }
 
         UUID userId = UUID.randomUUID();
-        String hashedPassword = passwordEncoder.encode(request.getPassword());
 
-        AuthUser authUser = new AuthUser(
-                userId,
-                request.getEmail(),
-                hashedPassword,
-                request.getRole() != null ? request.getRole() : "USER"
-        );
+        String keycloakId = keycloakService.createUser(request);
 
-        authUserRepository.save(authUser);
+        AuthUser authUser = AuthUser.builder()
+                .id(UUID.fromString(keycloakId))
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .build();
 
         request.getEmployeeCreateDto().setId(userId);
 
         // TODO: Call user service to create user profile
         // userClient.createUser(new UserCreateRequest(userId, request.getFullName(), request.getEmail()));
         employeeClient.createEmployee(request.getEmployeeCreateDto());
+
+        authUserRepository.save(authUser);
 
         return new RegisterResponse(userId, "User registered successfully");
     }
