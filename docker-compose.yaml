@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  # Eureka Server (Service Discovery)
+  eureka-server:
+    build:
+      context: ./eureka-server  # Directory containing the Dockerfile
+    ports:
+      - "8761:8761"  # Eureka dashboard
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Config Server (Spring Cloud Config)
+  config-service:
+    build:
+      context: ./config-service
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker,native
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+    depends_on:
+      - eureka-server
+    volumes:
+      - ./config-repo:/config-repo
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=default
+      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+    depends_on:
+      - config-service
+      - eureka-server
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=default
+      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+    depends_on:
+      - config-service
+      - eureka-server
+      - postgres
+      - keycloak
+
+  employee-service:
+    build:
+      context: ../employee-service
+    ports:
+      - "8082:8080"  # Mapped to 8082 on host to avoid conflicts
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/employee_database
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+    depends_on:
+      - config-service
+      - eureka-server
+      - postgres
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_MULTIPLE_DATABASES=auth_database, employee_database
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Keycloak (Identity Provider)
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.0
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    ports:
+      - "8180:8080"
+    command: ["start-dev"]
+
+volumes:
+  postgres_data:
+  config-repo:
