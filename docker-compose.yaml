@@ -22,7 +22,7 @@ services:
     ports:
       - "8888:8888"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker,native
+      - SPRING_PROFILES_ACTIVE=docker
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
     depends_on:
       - eureka-server
@@ -36,7 +36,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=default
+      - SPRING_PROFILES_ACTIVE=docker
       - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
     depends_on:
@@ -50,9 +50,12 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - SPRING_PROFILES_ACTIVE=default
+      - SPRING_PROFILES_ACTIVE=docker
       - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/auth_database
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
     depends_on:
       - config-service
       - eureka-server
@@ -80,21 +83,24 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_MULTIPLE_DATABASES=auth_database, employee_database
+      - POSTGRES_DB=auth_database
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
 
   # Keycloak (Identity Provider)
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0.0
+    image: quay.io/keycloak/keycloak:26.3.1
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
     ports:
       - "8180:8080"
-    command: ["start-dev"]
+    command: ["start-dev", "--import-realm"]
+    volumes:
+      - ./config:/opt/keycloak/data/import
 
 volumes:
   postgres_data:
