@@ -40,9 +40,12 @@ services:
       - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
     depends_on:
-      - config-service
-      - eureka-server
-      - keycloak
+      keycloak:
+        condition: service_healthy
+      config-service:
+        condition: service_started
+      eureka-server:
+        condition: service_started
 
   # Auth Service
   auth-service:
@@ -58,10 +61,14 @@ services:
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
     depends_on:
-      - config-service
-      - eureka-server
-      - postgres
-      - keycloak
+      keycloak:
+        condition: service_healthy
+      config-service:
+        condition: service_started
+      eureka-server:
+        condition: service_started
+      postgres:
+        condition: service_started
 
   employee-service:
     build:
@@ -76,10 +83,15 @@ services:
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
     depends_on:
-      - config-service
-      - eureka-server
-      - postgres
-      - keycloak
+      keycloak:
+        condition: service_healthy
+      config-service:
+        condition: service_started
+      eureka-server:
+        condition: service_started
+      postgres:
+        condition: service_started
+
 
   # PostgreSQL Database
   postgres:
@@ -103,6 +115,12 @@ services:
     command: ["start-dev", "--import-realm"]
     volumes:
       - ./config:/opt/keycloak/data/import
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://host.docker.internal:8180/realms/master" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
 volumes:
   postgres_data:
