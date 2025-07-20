@@ -2,7 +2,7 @@ spring:
   application:
     name: api-gateway
   profiles:
-    active: default
+    active: dev
   config:
     import: optional:configserver:http://localhost:8888/
 management:

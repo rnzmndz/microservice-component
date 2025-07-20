@@ -1,19 +1,18 @@
-version: '3.8'
 
 services:
   # Eureka Server (Service Discovery)
   eureka-server:
     build:
-      context: ./eureka-server  # Directory containing the Dockerfile
+      context: ./eureka-server  # Directory containing the Dockerfile.keycloak
     ports:
       - "8761:8761"  # Eureka dashboard
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+#    healthcheck:
+#      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 5
 
   # Config Server (Spring Cloud Config)
   config-service:
@@ -106,7 +105,9 @@ services:
 
   # Keycloak (Identity Provider)
   keycloak:
-    image: quay.io/keycloak/keycloak:26.3.1
+    build:
+      context: .
+      dockerfile: Dockerfile.keycloak
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
@@ -116,11 +117,11 @@ services:
     volumes:
       - ./config:/opt/keycloak/data/import
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://host.docker.internal:8180/realms/master" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/realms/master" ]
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 60s
+      retries: 10
+      start_period: 90s
 
 volumes:
   postgres_data:

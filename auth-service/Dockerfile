@@ -30,8 +30,8 @@ ADD https://github.com/eficode/wait-for/releases/download/v2.2.3/wait-for /wait-
 RUN chmod +x /wait-for
 
 # Health check (adjust endpoint as needed)
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD curl -f http://localhost:8080/actuator/health || exit 1
+HEALTHCHECK --start-period=30s --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:8081/actuator/health || exit 1
 
 # Run the application with additional JVM options
 ENTRYPOINT ["java", "-jar", "app.jar"]
